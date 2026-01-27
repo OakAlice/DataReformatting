@@ -2,14 +2,4 @@
 *.Rhistory
 
 # Ignore various other file types
-*.txt
 *.csv
-*.rds
-*.rda
-*.png
-*.docx
-*.pptx
-*.svg
-*.names
-*.joblib
-*.pyc
