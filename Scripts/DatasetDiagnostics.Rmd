@@ -1,0 +1,240 @@
+---
+title: "Dataset Characteristics and Diagnostics"
+output: html_document
+date: "`r Sys.Date()`"
+params:
+  species: "Vehkaoja_Dog"
+  wd: "C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting"
+  sample_rate: "100"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# strip the params
+setwd(params$wd)
+sample_rate <- as.numeric(params$sample_rate)
+species <- params$species
+
+# packages
+pacman::p_load(
+  data.table,
+  tidyverse,
+  patchwork
+  )
+
+# plotting stuff
+my_theme <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      panel.border = element_rect(color = "black", linewidth = 1.5, fill = NA),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.background = element_blank(),
+      panel.background = element_blank(),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+}
+
+my_colours = c("coral", "aquamarine3", "orchid3", "slateblue2", "goldenrod2", "deepskyblue3", "firebrick3", "tan1", "lightcoral" , "darkcyan", "tomato", "plum")
+
+# load in the data
+data <- fread(file.path("C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting", species, paste0(species, "_formatted.csv")))
+
+data <- data %>% dplyr::filter(!GeneralisedActivity== "") # removing the NA data
+
+```
+
+This a report showing basic at-a-glance diagnostics for each dataset.
+
+## Metadata
+```{r}
+# Table showing the metadata
+# TODO: please make this :)
+```
+
+## Data volume
+How much data is there, per activity and per ID.
+
+```{r volume of data, echo=FALSE,  fig.width = 10, fig.height = 4}
+
+vol <- data %>% 
+  group_by(ID, Activity) %>%
+  count() %>%
+  mutate(mins = (n/sample_rate)/60)
+
+act_vol_plot <- ggplot(vol, aes(x = Activity, y = mins, fill = as.factor(ID))) +
+  geom_col() +
+  labs(x = "Activity", y = "Volume of data (mins)") +
+  my_theme() + theme(legend.position = "none", 
+                     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1))
+
+ID_vol_plot <- ggplot(vol, aes(x = as.factor(ID), y = mins, fill = as.factor(Activity))) +
+  geom_col() +
+  labs(x = "ID", y = "Volume of data (mins)") +
+  my_theme() + theme(legend.position = "none",
+                     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1))
+
+act_vol_plot + ID_vol_plot
+
+```
+
+## Sequences
+How much of the data is collected in sequence, how many transitions are captured. Plot 1 -> length of sequences. Plot 2 -> number of transtions in the sequence
+
+```{r sequences, echo = FALSE,  fig.width = 10, fig.height = 4}
+seq_len <- data %>%
+  group_by(ID, sequence) %>%
+  count() %>%
+  mutate(mins = (n/sample_rate)/60)
+
+seq_len_plot <- ggplot(seq_len, aes(x = mins, fill = as.factor(ID))) +
+ geom_histogram() + 
+  labs(x = "Length of continuous sequence (min)", y = "Frequency") +
+  my_theme() + theme(legend.position = "none") 
+
+# now looking at the number of transitions
+data <- data %>%
+  group_by(ID, sequence) %>%
+  arrange(Time) %>%
+  mutate(
+    change_point = if_else(lag(Activity) == Activity, 0L, 1L),
+    change_point = replace_na(change_point, 0L),
+    event = cumsum(change_point)
+  ) %>%
+  select(-change_point) %>%
+  ungroup() %>%
+  arrange(ID, Time)
+
+seq_trans <- data %>%
+  group_by(ID, sequence) %>%
+  summarise(transitons = max(event))
+
+seq_trans_plot <- ggplot(seq_trans, aes(x = transitons, fill = as.factor(ID))) +
+ geom_histogram() + 
+  labs(x = "Number of behavioural transitions captured within the sequence", y = "Frequency") +
+  my_theme() + theme(legend.position = "none")
+
+seq_len_plot + seq_trans_plot
+
+```
+
+## Durations
+What was the duration of the behaviours
+
+```{r durations, echo=FALSE, fig.width = 10, fig.height = 4}
+
+train_lengths <- data %>%
+  group_by(ID, sequence, Activity, event) %>%
+  count() %>%
+  mutate(mins = (n/sample_rate)/60)
+
+lengths <- ggplot(train_lengths, aes(x = as.factor(Activity), y = mins)) +
+  geom_boxplot() +
+  labs(x = "Activity", y = "Length of each individual event (mins)") +
+  my_theme() + theme(legend.position = "none",
+                     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1))
+
+# make a distribution of the behaviours
+freqs <- ggplot(train_lengths, aes(x = mins, fill = as.factor(event))) +
+  geom_histogram() + 
+  labs(x = "Length of each individual event (mins)", y = "Frequency") +
+  my_theme() +  theme(legend.position = "none")
+
+lengths + freqs
+
+# and now actually just print the stats
+stat_mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# its in raw samples at the moment so need to summarise to seconds
+train_summary <- train_lengths %>%
+  group_by(Activity) %>%
+  summarise(
+    min_len= min(mins),
+    mean   = mean(mins),
+    median = median(mins),
+    mode   = stat_mode(mins),
+    p75    = quantile(mins, 0.75),
+    p95    = quantile(mins, 0.95),
+    max    = max(mins),
+    .groups = "drop"
+  )
+
+# TODO: is there a better way to display this information??
+print(train_summary)
+
+```
+
+## Behavioural Samples
+Visualising what each of the behaviours look like.
+
+```{r trace examples, echo = FALSE, fig.width = 10, fig.height = 10}
+plotTraceExamples <- function(behaviours, data, individuals, n_samples) {
+  
+  data <- data %>% filter(ID %in% sample(unique(data$ID), individuals))
+  
+  # Create plots for each behavior (with error catching)
+  plots <- purrr::map(behaviours, function(behaviour) {
+    tryCatch(
+      {
+        plot_behaviour(behaviour, n_samples, data)
+      },
+      error = function(e) {
+        message("Skipping plot for ", behaviour, ": ", e$message)
+        NULL  # Return NULL to indicate skipping
+      }
+    )
+  })
+  
+  # Remove NULL plots (for behaviors with no data)
+  plots <- purrr::compact(plots)
+  
+  # Combine plots into a single grid
+  grid_plot <- cowplot::plot_grid(plotlist = plots)
+  
+  return(list(plots = plots, 
+                 grid_plot = grid_plot))
+}
+
+# Function to create the plot for each behavior
+plot_behaviour <- function(behaviour, n_samples, data) {
+  df <- data %>%
+    filter(Activity == behaviour) %>%
+    group_by(ID, Activity) %>%
+    slice(1:n_samples) %>%
+    mutate(relative_time = row_number())
+  
+  # Check if the filtered dataframe is empty
+  if (nrow(df) == 0) {
+    stop("No data available for behaviour: ", behaviour)
+  }
+  
+  ggplot(df, aes(x = relative_time)) +
+    geom_line(aes(y = X, color = "X"), show.legend = FALSE) +
+    geom_line(aes(y = Y, color = "Y"), show.legend = FALSE) +
+    geom_line(aes(y = Z, color = "Z"), show.legend = FALSE) +
+    labs(title = paste(behaviour),
+         x = NULL, y = NULL) +
+    scale_color_manual(values = c(X = "aquamarine3", Y = "plum", Z = "goldenrod"), guide = "none") +
+    facet_wrap(~ ID, nrow = 1, scales = "free_x") +
+    theme_minimal() +
+    theme(panel.grid = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank())
+}
+
+# cahnge these variables to change what is plotted
+tracePlots <- plotTraceExamples(
+  behaviours = unique(data$Activity),
+  data = data,
+  individuals = 5, # length(unique(data$ID)),
+  n_samples = 2 * sample_rate # 2 seconds
+)
+tracePlots$grid_plot
+
+```
+

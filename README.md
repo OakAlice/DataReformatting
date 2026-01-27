@@ -12,9 +12,12 @@ DataReformatting
 │ └── raw/ 
 │    └── file *csv or subdirectories with the original data as downloaded from the repo*
 │ └── Dataset_Formatted.csv *reformatted csv, ready for use in other projects*
-├── Main.R *setwd(), load packages, call other scripts*
-├── All_Metadata.csv *parent csv that contains releavant analysis metadata from all the datasets*
-└── Dataset_Characteristics.Rmd *R markdown that creates diagnostics html report about the data*
+├── Scripts/
+│ └── Main.R *setwd(), load packages, call other scripts* 
+│ └── Dataset_Diagnostics.Rmd *R markdown that creates diagnostics html report about the data*
+│ └── Generate_Dataset_Diagnostics.R *R script that calls the diagnostics markdown*
+├── MetadataGuide.md *Guide for the metadata collected from each paper* 
+└── All_Metadata.csv *parent csv that contains releavant analysis metadata from all the datasets into single csv*
 
 ## Data Format
 All datasets are reformatted to the following structure:
@@ -24,4 +27,6 @@ All datasets are reformatted to the following structure:
     - Time: preferably as a POSIXct class, however, may require alternate numeric format - defined in metadata sheet
     - X, Y, Z: raw axes
     - Activity: Behavioural label
+    - UpdatedActivity: Behavioural label, edited or grouped.
+    - Sequence: Unique numerical indicator grouping continuous periods of time sequences together.
 
