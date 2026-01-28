@@ -61,7 +61,7 @@ How much data is there, per activity and per ID.
 
 vol <- data %>% 
   group_by(ID, Activity) %>%
-  count() %>%
+  dplyr::count() %>%
   mutate(mins = (n/sample_rate)/60)
 
 act_vol_plot <- ggplot(vol, aes(x = Activity, y = mins, fill = as.factor(ID))) +
@@ -86,7 +86,7 @@ How much of the data is collected in sequence, how many transitions are captured
 ```{r sequences, echo = FALSE,  fig.width = 10, fig.height = 4}
 seq_len <- data %>%
   group_by(ID, sequence) %>%
-  count() %>%
+  dplyr::count() %>%
   mutate(mins = (n/sample_rate)/60)
 
 seq_len_plot <- ggplot(seq_len, aes(x = mins, fill = as.factor(ID))) +
@@ -97,19 +97,17 @@ seq_len_plot <- ggplot(seq_len, aes(x = mins, fill = as.factor(ID))) +
 # now looking at the number of transitions
 data <- data %>%
   group_by(ID, sequence) %>%
-  arrange(Time) %>%
+  dplyr::arrange(Time, .by_group = TRUE) %>%
   mutate(
-    change_point = if_else(lag(Activity) == Activity, 0L, 1L),
-    change_point = replace_na(change_point, 0L),
+    change_point = as.integer(!is.na(lag(Activity)) & lag(Activity) != Activity),
     event = cumsum(change_point)
   ) %>%
-  select(-change_point) %>%
   ungroup() %>%
   arrange(ID, Time)
 
 seq_trans <- data %>%
   group_by(ID, sequence) %>%
-  summarise(transitons = max(event))
+  dplyr::summarise(transitons = max(event))
 
 seq_trans_plot <- ggplot(seq_trans, aes(x = transitons, fill = as.factor(ID))) +
  geom_histogram() + 
@@ -127,7 +125,7 @@ What was the duration of the behaviours
 
 train_lengths <- data %>%
   group_by(ID, sequence, Activity, event) %>%
-  count() %>%
+  dplyr::count() %>%
   mutate(mins = (n/sample_rate)/60)
 
 lengths <- ggplot(train_lengths, aes(x = as.factor(Activity), y = mins)) +
@@ -153,7 +151,7 @@ stat_mode <- function(x) {
 # its in raw samples at the moment so need to summarise to seconds
 train_summary <- train_lengths %>%
   group_by(Activity) %>%
-  summarise(
+  dplyr::summarise(
     min_len= min(mins),
     mean   = mean(mins),
     median = median(mins),
@@ -172,10 +170,10 @@ print(train_summary)
 ## Behavioural Samples
 Visualising what each of the behaviours look like.
 
-```{r trace examples, echo = FALSE, fig.width = 10, fig.height = 10}
+```{r trace examples, echo = FALSE, fig.width = 20, fig.height = 10}
 plotTraceExamples <- function(behaviours, data, individuals, n_samples) {
   
-  data <- data %>% filter(ID %in% sample(unique(data$ID), individuals))
+  data <- data %>% dplyr::filter(ID %in% sample(unique(data$ID), individuals))
   
   # Create plots for each behavior (with error catching)
   plots <- purrr::map(behaviours, function(behaviour) {
@@ -203,10 +201,10 @@ plotTraceExamples <- function(behaviours, data, individuals, n_samples) {
 # Function to create the plot for each behavior
 plot_behaviour <- function(behaviour, n_samples, data) {
   df <- data %>%
-    filter(Activity == behaviour) %>%
+    dplyr::filter(Activity == behaviour) %>%
     group_by(ID, Activity) %>%
     slice(1:n_samples) %>%
-    mutate(relative_time = row_number())
+    dplyr::mutate(relative_time = row_number())
   
   # Check if the filtered dataframe is empty
   if (nrow(df) == 0) {
@@ -231,8 +229,8 @@ plot_behaviour <- function(behaviour, n_samples, data) {
 tracePlots <- plotTraceExamples(
   behaviours = unique(data$Activity),
   data = data,
-  individuals = 5, # length(unique(data$ID)),
-  n_samples = 2 * sample_rate # 2 seconds
+  individuals = length(unique(data$ID)),
+  n_samples = 3 * sample_rate # 2 seconds
 )
 tracePlots$grid_plot
 

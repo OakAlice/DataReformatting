@@ -3,3 +3,5 @@
 
 # Ignore various other file types
 *.csv
+*.xlsx
+*.h5
