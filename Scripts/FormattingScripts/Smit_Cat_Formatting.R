@@ -11,7 +11,7 @@ pacman::p_load(data.table,
                readxl,
                reshape2,
                plyr
-)
+      )
 
 if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
   
@@ -61,23 +61,17 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
   files <- list.files(file.path(species, "raw", "Accel"), pattern = "Collar.csv", full.names = TRUE)
   
   data <- lapply(files, function(x){
-    
-    if (!str_split(tools::file_path_sans_ext(basename(x)), "-")[[1]][3] %in% unique(longanno_activity$ID)){
-      print("no annotations")
-      return(NULL)
-    }
-    
-    dat <- fread(x)
-    dat <- dat %>%
+    dat <- fread(x) %>%
       dplyr::rename(Time = Timestamp,
-                    X = `Accelerometer X`,
-                    Y = `Accelerometer Y`,
-                    Z = `Accelerometer Z`)
+             X = `Accelerometer X`,
+             Y = `Accelerometer Y`,
+             Z = `Accelerometer Z`)
+    
     
     # ensure that the timezone for this data is set correctly
     # set the tz to UTC (DOUBLE CHECK THIS DOESNT CHANGE THE VALUE)
     dat[, Time := as.POSIXct(Time, format = "%d/%m/%Y %H:%M:%OS", tz = "UTC")]
-    
+
     # select the data that falls within the annotation times
     relevant_annotations <- longanno_activity %>%
       dplyr::filter(ID == str_split(tools::file_path_sans_ext(basename(x)), "-")[[1]][3]) 

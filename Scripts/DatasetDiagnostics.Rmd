@@ -225,6 +225,12 @@ plot_behaviour <- function(behaviour, n_samples, data) {
           axis.text.y = element_blank())
 }
 
+
+# data <- fread(file.path("C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting/Smit_Cat/Smit_Cat_Labelled.csv")) %>%
+#   rename(X = Accelerometer.X,
+#          Y = Accelerometer.Y,
+#          Z = Accelerometer.Z,
+#          Time = datetime_precise)
 # cahnge these variables to change what is plotted
 tracePlots <- plotTraceExamples(
   behaviours = unique(data$Activity),
