@@ -30,5 +30,4 @@ All datasets are reformatted to the following structure:
     - UpdatedActivity: Behavioural label, edited or grouped.
     - Sequence: Unique numerical indicator grouping continuous periods of time sequences together.
 
-hi
 

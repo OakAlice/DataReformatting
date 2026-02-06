@@ -2,6 +2,11 @@
 
 # loading in data, assigning Activity and renaming columns
 # behaviours I want to retain from the 3 columns
+
+species <- "Vehkaoja_Dog"
+outputh_path <- "Vehkaoja_Dog_formatted.csv"
+
+
 accepted_behaviours <- c("Walking", "Sniffing", "Sitting", "Trotting", "Lying chest", "Standing", "Galloping")
 data <- fread("Vehkaoja_Dog/raw/DogMoveData.csv") %>%
     mutate(

@@ -1,10 +1,11 @@
 # Formatting the cat data -------------------------------------------------
 
 sample_rate <- 40
+output_path <- "Dunford_Cat/Dunford_Cat_formatted.csv"
 
-if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
+if(!file.exists(file.path(species, "Dunford_Cat_formatted.csv"))){
 
-   data <- fread(paste0("Data/", species, "/raw/Dunford_et_al._Cats_calibrated_data.csv"))
+   data <- fread(paste0("Dunford_Cat/raw/Dunford_et_al._Cats_calibrated_data.csv"))
   
   data <- data %>%
     group_by(ID) %>%
@@ -19,13 +20,29 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
         origin = "1970-01-01",
         tz = "UTC"
       )
-    ) %>%
+    ) %>% 
     ungroup() %>%
     select(-time_sec, -day_offset, -numeric_datetime) %>% 
     rename(X = AccX,
            Y = AccY,
            Z = AccZ,
            Activity = Behaviour)
+  
+  
+  
+  # Adding the sequencing ---------------------------------------------------
+  data <- data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
+  
 } else {
   print("data already created")
 }
+
+fwrite(data, "Dunford_Cat/Dunford_Cat_formatted.csv")
+

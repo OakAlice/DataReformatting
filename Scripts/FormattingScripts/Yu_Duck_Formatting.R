@@ -2,9 +2,11 @@
 
 # variables
 sample_rate <- 25
+species <- "Yu_Duck"
+output_path <- "Yu_Duck_formatted.csv"
 
 
-files <- list.files(file.path(base_path, "Data", species, "behaviours"), full.names = TRUE)
+files <- list.files(file.path(species, "raw"), full.names = TRUE)
 
 if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
   print("data already formatted")
@@ -32,8 +34,19 @@ if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
            Time = timestamp2)
   
   # split labelled and unlabelled
-  labelled <- data %>% filter(!Activity == "")
+  data <- data %>% filter(!Activity == "")
   unlabelled <- data %>% filter(Activity == "") # there isn't really enough of this to qualify as much??? just ignore it
   
-  fwrite(labelled, file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  data <- data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
+  
+  
+  
+  fwrite(data, file.path(species, "Yu_Duck_formatted.csv"))
 }

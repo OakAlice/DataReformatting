@@ -12,9 +12,10 @@ params:
 knitr::opts_chunk$set(echo = FALSE)
 
 # strip the params
-setwd(params$wd)
-sample_rate <- as.numeric(params$sample_rate)
-species <- params$species
+#setwd(params$wd)
+#sample_rate <- as.numeric(params$sample_rate)
+species <- "Annett_Glider"
+sample_rate <- 20
 
 # packages
 pacman::p_load(
@@ -40,9 +41,8 @@ my_theme <- function() {
 my_colours = c("coral", "aquamarine3", "orchid3", "slateblue2", "goldenrod2", "deepskyblue3", "firebrick3", "tan1", "lightcoral" , "darkcyan", "tomato", "plum")
 
 # load in the data
-data <- fread(file.path("C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting", species, paste0(species, "_formatted.csv")))
+data <- fread(file.path("C:/Users/norri/OneDrive/Documents/GitHub/DataReformatting", species, paste0(species, "_formatted.csv")))
 
-data <- data %>% dplyr::filter(!GeneralisedActivity== "") # removing the NA data
 
 ```
 
@@ -237,9 +237,18 @@ plot_behaviour <- function(behaviour, n_samples, data) {
 tracePlots <- plotTraceExamples(
   behaviours = unique(data$Activity),
   data = data,
-  individuals = 5, # length(unique(data$ID)),
-  n_samples = 2 * sample_rate # 2 seconds
+  individuals = ifelse(length(unique(data$ID))>5, 5, length(unique(data$ID))),
+  if(sample_rate <5) {
+    n_samples = 6 * sample_rate
+  } else {
+    n_samples = 2 * sample_rate
+  }
 )
+
+ 
+
+
+
 tracePlots$grid_plot
 
 ```

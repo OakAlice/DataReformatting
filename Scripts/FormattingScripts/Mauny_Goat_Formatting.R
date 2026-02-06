@@ -1,14 +1,25 @@
 # formatting the goat data ------------------------------------------------
 
 sample_rate <- 5
+species <- "Mauny_Goat"
+output_path <- "Mauny_Goat/Mauny_Goat_formatted.csv"
+library(naniar)
 
-if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
+
+if (file.exists(file.path(species, "Formatted_raw_data.csv"))){
   print("data already formatted")
 } else {
   
-  files <- list.files(file.path(base_path, "Data", species, "raw"), full.names = TRUE)
+  files <- list.files(file.path(species, "raw"), full.names = TRUE)
   data <- lapply(files, function(x){
     df <- fread(x)
+    
+    df <- df %>% 
+      replace_with_na(replace = list(feeding_behav_data_goat = "nonef",
+                                     social_behav_data_goat = "nones",
+                                     other_behav_data_goat = "noneo",
+                                     disturb_behav_data_goat = "no"
+                                     ))
     
     # combine the behaviours
     df <- df %>%
@@ -48,6 +59,17 @@ if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
     ungroup() %>%
     arrange(ID, Time)
   
-  fwrite(data, file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  
+  
+  data <- data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
+  
+  fwrite(data(species, "Mauny_Goat_formatted.csv"))
 }
 

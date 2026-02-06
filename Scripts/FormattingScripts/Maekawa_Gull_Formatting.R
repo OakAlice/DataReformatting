@@ -1,12 +1,11 @@
 # Formatting the gull data ------------------------------------------------
-# species <- "Maekawa_Gulls"
+species <- "Maekawa_Gull"
 
 if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
-  print("data already formatted")
-} else {
+
   
-  data <- fread(file.path(base_path, "Data", species, "raw_data.csv"))
-  labels <- fread(file.path(base_path, "Data", species, "labels.csv"))
+  data <- fread(file.path(species, "raw/raw_data.csv"))
+  labels <- fread(file.path(species, "raw/labels.csv"))
   
   sample_rate <- 25
   
@@ -16,31 +15,57 @@ if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
   labels[, stt_timestamp := as.POSIXct(stt_timestamp)]
   labels[, stp_timestamp := as.POSIXct(stp_timestamp)]
   
-  # Prepare for foverlaps:
-  # 1. Add 'start' and 'end' to data — same timestamp
-  data_overlap <- data[, .(animal_tag, logger_id, acc_x, acc_y, acc_z,
-                           start = timestamp, end = timestamp)]
+  # Prepare for overlaps:
+  # 1. Add 'start' and 'end' to data 
   
-  # 2. Add 'start' and 'end' to labels
-  labels_overlap <- labels[, .(animal_tag, start = stt_timestamp, end = stp_timestamp,
-                               activity, label_id, source)]
+  setDT(labels)
+  setDT(data)
   
-  # Set keys
-  setkey(labels_overlap, animal_tag, start, end)
-  setkey(data_overlap, animal_tag, start, end)
   
-  # Perform the overlap join
-  data_labelled <- foverlaps(data_overlap, labels_overlap, type = "within", nomatch = 0L)
+  setkey(labels, animal_tag, stt_timestamp, stp_timestamp)
   
-  # select only the columns we want
-  data_labelled <- data_labelled %>%
-    select(animal_tag, activity, acc_x, acc_y, acc_z, i.start) %>%
-    rename(ID = animal_tag,
-           Activity = activity,
-           Time = i.start,
-           X = acc_x,
-           Y = acc_y,
-           Z = acc_z)
-  
-  fwrite(data_labelled, file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  data <- labels [
+    data,
+    on = .(
+      animal_tag,
+      stt_timestamp <= timestamp,
+      stp_timestamp >= timestamp
+    ),
+    nomatch = 0,
+    .(
+      animal_tag,
+      timestamp,
+      acc_x, acc_y, acc_z,
+      stt_timestamp,
+      stp_timestamp,
+      activity
+    )
+  ]
 }
+
+data <- data %>%
+  select(animal_tag, timestamp, acc_x, acc_y, acc_z, activity,
+         stp_timestamp, stt_timestamp) %>%
+  rename(Time = timestamp,
+         X = acc_x,
+         Y = acc_y,
+         Z = acc_z,
+         Activity = activity,
+         Start_Time = stt_timestamp,
+         Stop_Time = stp_timestamp,
+         ID = animal_tag)
+
+
+data <- data %>%
+  group_by(ID) %>%
+  arrange(Time) %>%
+  mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+         break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+         break_point = replace_na(break_point, 0),
+         sequence = cumsum(break_point)) %>%
+  select(-break_point, -time_diff)
+
+  fwrite(data, "Maekawa_Gull/Maekawa_Gull_formatted.csv")
+
+  print("data already formatted")
+

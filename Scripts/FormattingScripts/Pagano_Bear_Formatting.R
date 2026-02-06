@@ -3,14 +3,15 @@ library(data.table)
 library(dplyr)
 
 # variables
-sample_rate <- 16 #hz
+species <- "Pagano_Bear"
+sample_rate <- 16 #
 
 if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
   print("data already formatted")
 } else {
     
-  accel <- fread(file.path(base_path, "Data", species, "raw", "PolarBear_archival_logger_data_southernBeaufortSea_2014_2016_revised.csv"))
-  behs <- fread(file.path(base_path, "Data", species,"raw", "PolarBear_video-derived_behaviors_southernBeaufortSea_2014_2016_revised.csv"))
+  accel <- fread(file.path(species, "raw", "PolarBear_archival_logger_data_southernBeaufortSea_2014_2016_revised.csv"))
+  behs <- fread(file.path(species,"raw", "PolarBear_video-derived_behaviors_southernBeaufortSea_2014_2016_revised.csv"))
   
   # theyre big, so going to use table instead of frame conventions
   setDT(behs)
@@ -46,13 +47,22 @@ if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
     filter(!Activity == "unknown")
   
   # subset to a reasonable volume of data
-  formatted_accel_beh2 <- fomatted_accel_beh %>%
+  data  <- fomatted_accel_beh %>%
     group_by(ID, Activity) %>%
     arrange(Time) %>%
     slice(1:20000) %>%
     ungroup() %>%
     arrange(ID, Time)
   
+  data <- data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
+  
   # save that
-  fwrite(formatted_accel_beh2, file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  fwrite(data, file.path(species, "Pagano_Bear_formatted.csv"))
 } 
