@@ -1,6 +1,0 @@
-https://figshare.com/articles/dataset/R_dataframes_of_annoted_behaviour_data_and_accelerometer_data/23605842
-
-https://www.mdpi.com/1424-8220/23/16/7165
-
-
-git has instructions for how to merge the data: https://github.com/MSmit1992/Chapter1-MLmodel_Validation/tree/main/Step%203:%20Data%20preparation

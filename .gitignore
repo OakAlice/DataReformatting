@@ -1,6 +1,9 @@
 # Ignore R history files
 *.Rhistory
 
+# Ignore the data folders
+/Data
+
 # Ignore various other file types
 *.csv
 *.xlsx
