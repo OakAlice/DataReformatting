@@ -2,13 +2,14 @@
 
 #setwd("C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting")
 
-setwd("C:/Users/norri/OneDrive/Documents/GitHub/DataReformatting")
+setwd("E:/DataReformatting/Data")
 
 # load in required package
 pacman::p_load(data.table,
                lubridate,
                tidyverse,
-               stringr
+               stringr,
+               R.matlab
                )
 
 # list of all the species that could be chosen
