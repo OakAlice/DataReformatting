@@ -24,3 +24,12 @@ source(file.path("Scripts", species, paste0(species, "_Formatting.R")))
 
 # generate dataset characteristics and diagnostics report
 source("Scripts/Generate_Dataset_Diagnostics.R")
+
+
+
+# TODo:
+# Standardise the path names (all hardcode from Data)
+# standardise commenting
+# standardise formatting
+# clean up and make faster
+# only generate if isnt already generated

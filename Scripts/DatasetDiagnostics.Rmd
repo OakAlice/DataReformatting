@@ -14,8 +14,8 @@ knitr::opts_chunk$set(echo = FALSE)
 # strip the params
 #setwd(params$wd)
 #sample_rate <- as.numeric(params$sample_rate)
-species <- "Baglione_Crow"
-sample_rate <- 50
+species <- "Wanja_Fox"
+sample_rate <- 33
 
 # packages
 pacman::p_load(

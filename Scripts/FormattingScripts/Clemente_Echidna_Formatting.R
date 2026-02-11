@@ -28,8 +28,10 @@ sample_rate <- 10
 #   }
 
 # Format the non-aggregate ones together ----------------------------------
-if(!file.exists(file.path(file.path(base_path, "Data", species), "Formatted_raw_data.csv"))){
-  files <- list.files(file.path(base_path, "Data", species, "raw"), pattern = "\\corrected_Scored_Extracted.csv$", full.names = TRUE)
+if(!file.exists(file.path(file.path("Clemente_Echidna"), "Formatted_raw_data.csv"))){
+  files <- list.files(file.path("Clemente_Echidna", "raw"), 
+                      pattern = "\\corrected_Scored_Extracted.csv$", 
+                      full.names = TRUE)
   
   data <- lapply(files, function(x){
     df <- fread(x)
@@ -38,19 +40,31 @@ if(!file.exists(file.path(file.path(base_path, "Data", species), "Formatted_raw_
     
     df <- df %>%
       select(V1, V2, V3, V4, V13, ID) %>%
-      rename(Time = V1,
-             X = V2,
+      mutate(start_time = as.POSIXct("2000-01-01 00:00:00", tz = "UTC"), # the time is already in sec so just add to a base time
+             Time = start_time + V1) %>%
+      rename(X = V2,
              Y = V3,
              Z = V4,
-             Activity = V13)
+             Activity = V13) %>%
+      select(-V1, -start_time)
+      df
   })
   
   data <- bind_rows(data)
-  fwrite(data, file.path(output_dir, "Formatted_all_data.csv"))
   
   # Separate labelled and unlabelled data -----------------------------------
   labelled_data <- data %>% filter(!Activity == "0")
-  fwrite(labelled_data, file.path(file.path(base_path, "Data", species), "Formatted_raw_data.csv"))
-  unlabelled_data <- data %>% filter(Activity == "0") %>% select(!Activity)
-  fwrite(unlabelled_data, file.path(file.path(base_path, "Data", species), "Formatted_unlabelled_data.csv"))
+  
+  # Add in the sequencing ---------------------------------------------------
+  labelled_data <- labelled_data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
+  
+  
+  fwrite(labelled_data, "Clemente_Echidna/Clemente_Echidna_formatted.csv")    
 }
