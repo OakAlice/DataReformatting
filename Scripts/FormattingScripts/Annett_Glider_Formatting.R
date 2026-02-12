@@ -1,20 +1,28 @@
-# Glider Data
+# Annett_Glider -----------------------------------------------------------
+# This data set needed IDs to be taken from file names
+# This data set has a key for the names of each behavior
+# the data needed dates and start times to be generated
 
-  species <- "Annett_Glider"
+# Variables ---------------------------------------------------------------
+sample_rate <- 50
+outputpath <-  "Data/Annett_Glider/Annett_Glider_formatted.csv"
 
+# Reading in and relabeling data -----------------------------------------
+if(!file.exists(file.path(file.path("Annett_Glider"), "Formatted_raw_data.csv"))){
+
+  
   raw_files <- list.files(
-      path = "Annett_Glider/raw",
+      path = "Data/Annett_Glider/raw",
     recursive = TRUE,
     pattern = "\\.txt$",
     full.names = TRUE)
   
-alldata <- lapply(raw_files, function(x){
-  
+  alldata <- lapply(raw_files, function(x){
   data <- fread(x)
-  ind <- ifelse(grepl("Flip", x), "Flip", "Gilberta")
-  
+  ind <- ifelse(grepl("Flip", x), "Flip", "Gilberta") # Take ID names from files
   data <- data %>% 
-    mutate(
+   # Generating a generic time stamp for the start time
+     mutate(
       time=as.POSIXct((V1 - 719529)*86400, origin = "1970-01-01", tz = "UTC"))
   
   data <- data %>% 
@@ -29,23 +37,19 @@ alldata <- lapply(raw_files, function(x){
   data <- filter(data, Activity != 0) 
   data
 })
-alldata <- rbindlist(alldata)
+data <- rbindlist(alldata)
+
+} else {
+  print("data already created")
+  
+}
 
 
-alldata <- alldata %>%
-  group_by(ID) %>%
-  arrange(Time) %>%
-  mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-         break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-         break_point = replace_na(break_point, 0),
-         sequence = cumsum(break_point)) %>%
-  select(-break_point, -time_diff)
-
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)
   
   
-  
-  
-  fwrite(alldata, "Annett_Glider/Annett_Glider_formatted.csv")    
+ 
   
   
   

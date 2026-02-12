@@ -1,6 +1,9 @@
-# Turtle Data H5 & csv -------------------------------------------------------
-# Load in the required packages for dealing with h5 files --------------------
+# Jeantet_Turtle ----------------------------------------------------------
+# The data is in both h5 and csv files
+# Both file types had to be read in data table and stitched together
+# IDs for the data was found in the file names
 
+# Load in the required packages for dealing with h5 files --------------------
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install("rhdf5", force = TRUE)
@@ -9,12 +12,16 @@ BiocManager::install("rhdf5", force = TRUE)
 # Retrieved 2026-02-05, License - CC BY-SA 4.0
 library(rhdf5)
 
-# ---------------------------------------------------------------------------
-
+# Variables ---------------------------------------------------------------
 sample_rate <- 20
+outputpath <- "Data/Jeantet_Turtle/Jeantet_Turtle_formatted.csv"
+
+
+# Read in and rename the acc data   ---------------------------------------
+if(!file.exists(file.path(file.path("Jeantet_Turtle"), "Formatted_raw_data.csv"))){
 
 raw_files <- list.files(
-  path = "D:/LabelledDataSets/Jeantet_Turtle/raw",
+  path = "Data/Jeantet_Turtle/raw",
   recursive = F,
   pattern = "\\.h5$",
   full.names = TRUE)
@@ -31,15 +38,9 @@ raw_data <- lapply(raw_files, function(x){
 raw_data <- rbindlist(raw_data)
 
 
-
-  
-  
-
-
-# behaviour files ---------------------------------------------------------
-
+# Read in the behaviour files ----------------------------------------------
 behaviors_files <- list.files(
-  path = "D:/LabelledDataSets/Jeantet_Turtle/raw",
+  path = "Data/Jeantet_Turtle/raw",
   recursive = TRUE,
   pattern = "\\.csv$",
   full.names = TRUE)
@@ -69,7 +70,7 @@ behaviors_data <- behaviors_data %>%
     )
   
 
-# bind them together ------------------------------------------------------
+# Convert to data table to bind the data  ---------------------------------
 setDT(raw_data)
 setDT(behaviors_data)
 
@@ -84,16 +85,7 @@ setDT(behaviors_data)
     ),
     nomatch = 0,
     .(
-      Id,
-      Activity,
-      X,
-      Y,
-      Z,
-      GX,
-      GY, 
-      GZ,
-      Row_Number,
-      Stt_Time
+      Id, Activity, X, Y, Z, GX, GY, GZ, Row_Number, Stt_Time
     )
   ]
 
@@ -121,30 +113,21 @@ setDT(behaviors_data)
     ) %>% 
     ungroup()
   
-
-#--------------------------------------------------------------------------
-  
- data <- data %>% 
+# Select and rename the data ----------------------------------------------
+  data <- data %>% 
     select(Id, Activity, X, Y, Z, GX, GY, GZ, Updated_Time) %>% 
     rename(ID = Id,
            Time = Updated_Time)
-
-# Sequencing --------------------------------------------------------------
-
-
   
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
+} else {
+  print("data already created")
+  
+ 
+  
+}
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)   
 
-  
-  fwrite(data, "Jeantet_Turtle/Jeantet_Turtle_formatted.csv")    
-  
   
 
 

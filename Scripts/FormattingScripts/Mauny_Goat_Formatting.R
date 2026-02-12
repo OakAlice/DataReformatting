@@ -1,16 +1,18 @@
-# formatting the goat data ------------------------------------------------
+# Mauny_Goat ------------------------------------------------
+# The Activity names had to be slightly changed
 
+# Variables ---------------------------------------------------------------
 sample_rate <- 5
-species <- "Mauny_Goat"
-output_path <- "Mauny_Goat/Mauny_Goat_formatted.csv"
-library(naniar)
+outputpath <- "Data/Mauny_Goat/Mauny_Goat_formatted.csv"
 
+# Required packages -------------------------------------------------------
+pacman::p_load(naniar)
 
-if (file.exists(file.path(species, "Formatted_raw_data.csv"))){
-  print("data already formatted")
-} else {
+# Read in the acc data and labels -----------------------------------------
+if(!file.exists(file.path(file.path("Mauny_Goat"), "Formatted_raw_data.csv"))){
+
   
-  files <- list.files(file.path(species, "raw"), full.names = TRUE)
+  files <- list.files(file.path("Data/Mauny_Goat/raw"), full.names = TRUE)
   data <- lapply(files, function(x){
     df <- fread(x)
     
@@ -21,7 +23,7 @@ if (file.exists(file.path(species, "Formatted_raw_data.csv"))){
                                      disturb_behav_data_goat = "no"
                                      ))
     
-    # combine the behaviours
+# combine the behaviours --------------------------------------------------
     df <- df %>%
       mutate(
         Activity = case_when(
@@ -44,8 +46,9 @@ if (file.exists(file.path(species, "Formatted_raw_data.csv"))){
     df$ID <- gsub(".csv", "", ID)
     
     return(df)
-  })
+ })
   
+# Rename the data ---------------------------------------------------------
   data <- bind_rows(data)
   data <- data %>%
     rename(Time = TIME,
@@ -58,18 +61,13 @@ if (file.exists(file.path(species, "Formatted_raw_data.csv"))){
     arrange(Time) %>%
     ungroup() %>%
     arrange(ID, Time)
-  
-  
-  
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
-  
-  fwrite(data(species, "Mauny_Goat_formatted.csv"))
-}
 
+  } else {
+  print("data already created")
+  }
+
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)
+
+
+  

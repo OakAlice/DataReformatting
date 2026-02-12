@@ -1,35 +1,13 @@
-# Formatting the echidna data ---------------------------------------------
+# Clemente_Echidna ---------------------------------------------
+# This data set needed a generic date generated
 
+# Variables ---------------------------------------------------------------
 sample_rate <- 10
+outputpath <- "Data/Clemente_Echidna/Clemente_Echidna_formatted.csv"
 
-# Get the files out of matlab ---------------------------------------------
-# if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
-#   print("data already formatted")
-# } else {
-#   input_dir <- "R:/FSHEE/Science/Unsupervised-Accel/Echidna data/echidna analysis" # they are stored here
-#   output_dir <- "R:/FSHEE/Science/Unsupervised-Accel/Echidna data/Raw_data"
-#   
-#   sure <- FALSE
-#   # this takes FOREVER TO DO so be sure
-#   if (sure == TRUE){
-#     mat_files <- list.files(input_dir, pattern = "\\.mat$", full.names = TRUE)
-#     file <- mat_files[64]
-#     for (file in mat_files) {
-#       data <- readMat(file)
-#       if ("Time.Acc.Temp.Activity.Mat.Scored" %in% names(data)) {
-#         df <- data[["Time.Acc.Temp.Activity.Mat.Scored"]]
-#         if (is.matrix(df) || is.data.frame(df)) {
-#           out_file <- file.path(output_dir,
-#                                 paste0(tools::file_path_sans_ext(basename(file)), "_Extracted.csv"))
-#           write.csv(df, out_file, row.names = FALSE)
-#         }
-#       }
-#     }
-#   }
-
-# Format the non-aggregate ones together ----------------------------------
+# Read in data and format the non-aggregate ones together ----------------------------------
 if(!file.exists(file.path(file.path("Clemente_Echidna"), "Formatted_raw_data.csv"))){
-  files <- list.files(file.path("Clemente_Echidna", "raw"), 
+  files <- list.files(file.path("Data","Clemente_Echidna", "raw"), 
                       pattern = "\\corrected_Scored_Extracted.csv$", 
                       full.names = TRUE)
   
@@ -40,7 +18,7 @@ if(!file.exists(file.path(file.path("Clemente_Echidna"), "Formatted_raw_data.csv
     
     df <- df %>%
       select(V1, V2, V3, V4, V13, ID) %>%
-      mutate(start_time = as.POSIXct("2000-01-01 00:00:00", tz = "UTC"), # the time is already in sec so just add to a base time
+      mutate(start_time = as.POSIXct("1970-01-01 00:00:00", tz = "UTC"), # the time is already in sec so just add to a base time
              Time = start_time + V1) %>%
       rename(X = V2,
              Y = V3,
@@ -53,18 +31,17 @@ if(!file.exists(file.path(file.path("Clemente_Echidna"), "Formatted_raw_data.csv
   data <- bind_rows(data)
   
   # Separate labelled and unlabelled data -----------------------------------
-  labelled_data <- data %>% filter(!Activity == "0")
-  
-  # Add in the sequencing ---------------------------------------------------
-  labelled_data <- labelled_data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
+  data <- data %>% filter(!Activity == "0")
   
   
-  fwrite(labelled_data, "Clemente_Echidna/Clemente_Echidna_formatted.csv")    
-}
+} else {
+  print("data already created")  
+   
+
+}  
+
+
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)  
+ 
+

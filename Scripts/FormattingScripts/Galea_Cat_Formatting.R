@@ -1,11 +1,15 @@
-# formatting this data
+# Galea_Cat ---------------------------------------------------------------
+# This data set was already formatted
 
 
-# came formatted this way because I made it
+# Variables ---------------------------------------------------------------
+sample_rate <- 50
+outputpath <- "Data/Galea_Cat/galea_Cat_formatted.csv"
 
-if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
+# Read in and rename the data ---------------------------------------------
+if(!file.exists(file.path(file.path("Galea_Cat"), "Formatted_raw_data.csv"))){
   
-  data <- fread(paste0("Galea_Cat/raw/all_labelled.csv"))
+  data <- fread(paste0("Data/Galea_Cat/raw/all_labelled.csv"))
   
   data <- data %>% 
   rename(Time = time,
@@ -13,23 +17,15 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
          Y = y,
          Z = z,
          Activity = activity)
+
+} else {
+  print("data already created")
   
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
-  
-  
-  
-  
-  print("there is an issue, data doesn't exist")
+
 }
 
-fwrite(data, "Galea_Cat/Galea_Cat_formatted.csv")
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)  
 
 
 

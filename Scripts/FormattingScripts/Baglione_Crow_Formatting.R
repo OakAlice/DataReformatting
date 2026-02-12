@@ -1,12 +1,16 @@
-# Formatting the Baglione Crows dataset -----------------------------------
+# Baglione_Crow ----------------------------------------------------------
 # challenging because there is not a 1-1 match between annotations and raw data
 # the ID names for these files don't quite match - had to edit the names of the annotations
 
+# Variables ---------------------------------------------------------------
 sample_rate <- 50
+output_path <- "Data/Baglione_Crow/Baglione_Crow_formatted.csv"
 
-# Loading in the raw data -------------------------------------------------
+# Reading in and relabelling data  -----------------------------------------
+if(!file.exists(file.path(file.path("Baglione_Crow"), "Formatted_raw_data.csv"))){
+  
 raw_files <- list.files(
-  path = "Baglione_Crow/raw",
+  path = "Data/Baglione_Crow/raw",
   recursive = FALSE,
   pattern = "\\.csv$",
   full.names = TRUE)
@@ -28,14 +32,14 @@ data <- rbindlist(data)
 
 # Loading in the annotation files -----------------------------------------
 anno_files <- list.files(
-  path = "Baglione_Crow/raw/Behavior_annotations/",
+  path = "Data/Baglione_Crow/raw/Behavior_annotations",
   recursive = FALSE,
   pattern = "\\.csv$",
   full.names = TRUE)
 
 anno <- lapply(anno_files, function(x){
   Id <- gsub("selections_", "", tools::file_path_sans_ext(basename(x)))
-  Id_edited <- sub("(\\d{2})", "", Id)
+  Id_edited <- sub("(\\d{2})", "", Id) # remove first 2 digits so matches with the other file
   
   d <- fread(x) %>%
     select(start_sec, end_sec, label) %>%
@@ -57,31 +61,27 @@ data_labelled <- anno[data,
                      .(X, Y, Z, ID, time, label)]
 data_labelled <- data_labelled %>% na.omit()
 
-# Convert the time to a posixct of some kind ------------------------------
-# unless the true start times can be found in the document somehwere, I am just going to generate generic time
-data_labelled <- data_labelled %>%
+# Convert the time to a POSIXct of some kind ------------------------------
+# Generating a generic strat time and date as a POSIXct and calculate time from there
+data <- data_labelled %>%
   group_by(ID) %>%
   arrange(time, .by_group = TRUE) %>% 
   mutate(
-    time_diff = (time - lag(time))/sample_rate, # divide by the sampkle rate to get from row into seconds
+    time_diff = (time - lag(time))/sample_rate, # divide by the sample rate to get from row into seconds
     time_diff = if_else(is.na(time_diff), 0, time_diff),  # replace first NA with 0
     cumtime = cumsum(time_diff),
-    start_time = as.POSIXct("2000-01-01 00:00:00", tz = "UTC"),
+    start_time = as.POSIXct("1970-01-01 00:00:00", tz = "UTC"),
     Time = start_time + cumtime
   ) %>%
   ungroup() %>%
   select(-time, -time_diff, -start_time, -cumtime) %>%
   rename(Activity = label)
 
-# Add sequencing ----------------------------------------------------------
-data_labelled <- data_labelled %>%
-  group_by(ID) %>%
-  arrange(Time) %>%
-  mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-         break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-         break_point = replace_na(break_point, 0),
-         sequence = cumsum(break_point)) %>%
-  select(-break_point, -time_diff)
+} else {
+  print("data already created")
+    
+}
 
-# Save to file ------------------------------------------------------------
-fwrite(data_labelled, "Baglione_Crow/Baglione_Crow_formatted.csv")    
+
+# Save the file ------------------------------------------------------------
+fwrite(data, output_path) 

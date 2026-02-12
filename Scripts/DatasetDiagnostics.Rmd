@@ -3,8 +3,8 @@ title: "Dataset Characteristics and Diagnostics"
 output: html_document
 date: "`r Sys.Date()`"
 params:
-  species: "Vehkaoja_Dog"
-  wd: "C:/Users/oaw001/OneDrive - University of the Sunshine Coast/DataReformatting"
+  species: "Desantis_rattlesnake"
+  wd: "E:/DataReformatting"
   sample_rate: "100"
 ---
 
@@ -12,10 +12,11 @@ params:
 knitr::opts_chunk$set(echo = FALSE)
 
 # strip the params
-#setwd(params$wd)
-#sample_rate <- as.numeric(params$sample_rate)
-species <- "Wanja_Fox"
-sample_rate <- 33
+species <- params$species
+wd <- params$wd
+sample_rate <- as.numeric(params$sample_rate)
+# species <- "Wanja_Fox"
+# sample_rate <- 33
 
 # packages
 pacman::p_load(
@@ -42,7 +43,16 @@ my_theme <- function() {
 my_colours = c("coral", "aquamarine3", "orchid3", "slateblue2", "goldenrod2", "deepskyblue3", "firebrick3", "tan1", "lightcoral" , "darkcyan", "tomato", "plum")
 
 # load in the data
-data <- fread(file.path("E:/DataReformatting/Data", species, paste0(species, "_formatted.csv")))
+data <- fread(file.path(wd, "Data", species, paste0(species, "_formatted.csv")))
+
+data <- data %>%
+    group_by(ID) %>%
+    arrange(Time) %>%
+    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
+           break_point = ifelse(time_diff > 0.02 | time_diff < 0 , 1, 0),
+           break_point = replace_na(break_point, 0),
+           sequence = cumsum(break_point)) %>%
+    select(-break_point, -time_diff)
 
 
 ```
@@ -176,13 +186,13 @@ Visualising what each of the behaviours look like.
 ```{r trace examples, echo = FALSE, fig.width = 10, fig.height = 10}
 plotTraceExamples <- function(behaviours, data, individuals, n_samples) {
   
-  data <- data %>% filter(ID %in% sample(unique(data$ID), individuals))
+  data1 <- data %>% filter(ID %in% sample(unique(data$ID), individuals))
   
   # Create plots for each behavior (with error catching)
   plots <- purrr::map(behaviours, function(behaviour) {
     tryCatch(
       {
-        plot_behaviour(behaviour, n_samples, data)
+        plot_behaviour(behaviour, n_samples, data1)
       },
       error = function(e) {
         message("Skipping plot for ", behaviour, ": ", e$message)
@@ -246,11 +256,35 @@ tracePlots <- plotTraceExamples(
   }
 )
 
- 
-
-
-
 tracePlots$grid_plot
 
 ```
+ 
+Next we want a visualistion of the sequences available and the behaviours. If this is blank its probably because the times are spread over massive spereads of dates
+ 
+This first one is absolute time.
+```{r sequencing plot, echo = FALSE, fig.width = 10, fig.height = 10}
+# seq_plot <- ggplot(data, aes(x = Time, y = as.factor(ID), fill = as.factor(Activity))) +
+#   geom_tile() +
+#   my_theme() +
+#   labs(x = "Time", y = "ID")
+#  
+# seq_plot
+```
 
+This first one is relative time.
+```{r sequencing plot2, echo = FALSE, fig.width = 10, fig.height = 10}
+ids <- unique(na.omit(data$ID))
+chosen_IDs <- if (length(ids) < 5) ids else sample(ids, 5)
+
+data2 <- data %>% group_by(ID) %>% arrange(Time, .by_groups = TRUE) %>% mutate(rel_Time = row_number()) %>%
+  dplyr::filter(ID %in% chosen_IDs)
+seq_plot2 <- ggplot(data2, 
+                         aes(x = rel_Time, y = as.factor(ID), fill = as.factor(Activity))) +
+  geom_tile() +
+  my_theme() +
+  labs(x = "Row Number", y = "ID")
+
+seq_plot2
+ 
+```

@@ -16,8 +16,7 @@
 if (1 == 1) { # TODO: change this to be some more helpful condition later lol
   tryCatch({
     # Define the output directory and file
-    output_file <- file.path("C:/Users/norri/OneDrive/Documents/GitHub/DataReformatting",
-                             species, paste0(species, "_characteristics.html"))
+    output_file <- file.path(wd, "Data", species, paste0(species, "_characteristics.html"))
     
     # Knit the r markdown file as an HTML report (has the least errors/dependencies compared to other types of knits)
     rmarkdown::render(
@@ -27,7 +26,7 @@ if (1 == 1) { # TODO: change this to be some more helpful condition later lol
       output_format = "html_document",
       output_file = output_file,  # File name only
       params = list( # these are the things I'm going to feed in to change report
-        wd = "C:/Users/norri/OneDrive/Documents/GitHub/DataReformatting",
+        wd = wd,
         species = species,
         sample_rate = sample_rate
       )

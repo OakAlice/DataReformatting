@@ -1,25 +1,29 @@
-# Formatting the Smit_Cat data --------------------------------------------
+# Smit_Cat --------------------------------------------
 # refer to folder for email correspondence with lead author
 # there is also instructions on the lead author's github
 # this is a reproduction of her code
 # slightly changed to fit my file paths and use tidyverse notation
 # be mindful and careful of timezone changes
 
-pacman::p_load(data.table,
-               tidyverse,
-               lubridate,
-               readxl,
-               reshape2,
-               plyr
-)
 
-if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
+# Load in the required packages -------------------------------------------
+pacman::p_load(readxl,
+               reshape2,
+               plyr)
+
+
+# Variables ---------------------------------------------------------------
+sample_rate <- 50
+outputpath <-  "Data/Smit_Cat/Smit_Cat_formatted.csv"
+
+if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
   
-  # Prepare the annotations -------------------------------------------------
-  # read together the behaviour scoring data output for each cat - xlsx files
-  if(!file.exists(file.path(species, "raw", "Annotations.csv"))){
+  
+# Prepare the annotations -------------------------------------------------
+# read together the behaviour scoring data output for each cat - xlsx files
+  if(!file.exists(file.path("Data", "Smit_Cat", "raw", "Annotations.csv"))){
     
-    anno <- list.files(file.path(species, "raw", "Annotations"),pattern="*.xlsx", full.names = TRUE)
+    anno <- list.files(file.path("Data/Smit_Cat/raw/Labels_Data"),pattern="*.xlsx", full.names = TRUE)
     longanno <- lapply(anno, function(y){
       read_xlsx(y, sheet = "Clean") %>%
         mutate(ID = as.factor(
@@ -51,14 +55,14 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
     longanno_activity <- longanno_long %>% dplyr::filter(Status == 1) %>% select(-Status)
     
     # save these annotations
-    fwrite(longanno_activity, file.path(species, "raw", "Annotations.csv"))
+    fwrite(longanno_activity, file.path("Data", "Smit_Cat", "raw", "Annotations.csv"))
     
   } else {
-    longanno_activity <- fread(file.path(species, "raw", "Annotations.csv"))
+    longanno_activity <- fread(file.path("Data", "Smit_Cat", "raw", "Annotations.csv"))
   }
   
   # Prepare the acceleration data -------------------------------------------
-  files <- list.files(file.path(species, "raw", "Accel"), pattern = "Collar.csv", full.names = TRUE)
+  files <- list.files(file.path("Data/Smit_Cat/raw/Harness_Data"), pattern = "*.csv", full.names = TRUE)
   
   data <- lapply(files, function(x){
     dat <- fread(x) %>%
@@ -183,6 +187,10 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
     ))
   
   
-  # Write to file -----------------------------------------------------------
-  fwrite(data, file.path("Smit_Cat", paste0("Smit_Cat_formatted.csv")))
+
+} else {
+  print("data already created")
 }
+
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)

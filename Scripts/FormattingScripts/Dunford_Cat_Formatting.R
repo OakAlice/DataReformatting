@@ -1,18 +1,22 @@
-# Formatting the cat data -------------------------------------------------
+# Dunford_Cat -------------------------------------------------------------
+# This data set needed time to be managed recordings occurred over midnight
+# A generic date was also generated 
 
+# Variables ---------------------------------------------------------------
 sample_rate <- 40
-output_path <- "Dunford_Cat/Dunford_Cat_formatted.csv"
+outputpath <- "Data/Dunford_Cat/Dunford_Cat_formatted.csv"
 
-if(!file.exists(file.path(species, "Dunford_Cat_formatted.csv"))){
+# Read in and rename the data ---------------------------------------------
+if(!file.exists(file.path(file.path("Dunford_Cat"), "Formatted_raw_data.csv"))){
 
-   data <- fread(paste0("Dunford_Cat/raw/Dunford_et_al._Cats_calibrated_data.csv"))
+   data <- fread("Data/Dunford_Cat/raw/Dunford_et_al._Cats_calibrated_data.csv")
   
   data <- data %>%
     group_by(ID) %>%
     mutate(
       time_sec = as.numeric(
         strptime(Time, format = "%H:%M:%S", tz = "UTC")
-      ),
+      ), # Add the day offset and generate a date
       day_offset = cumsum(c(0, diff(time_sec) < 0)),
       numeric_datetime = day_offset * 86400 + time_sec,
       Time = as.POSIXct(
@@ -27,22 +31,13 @@ if(!file.exists(file.path(species, "Dunford_Cat_formatted.csv"))){
            Y = AccY,
            Z = AccZ,
            Activity = Behaviour)
-  
-  
-  
-  # Adding the sequencing ---------------------------------------------------
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
-  
 } else {
   print("data already created")
+  
+
+  
 }
 
-fwrite(data, "Dunford_Cat/Dunford_Cat_formatted.csv")
+# Save File ---------------------------------------------------------------
+fwrite(data, outputpath)
 

@@ -1,17 +1,17 @@
-# Formatting the duck data ------------------------------------------------
+# Yu_Duck ------------------------------------------------
 
-# variables
+
+# Variables ---------------------------------------------------------------
 sample_rate <- 25
-species <- "Yu_Duck"
-output_path <- "Yu_Duck_formatted.csv"
+outputpath <- "Data/Yu_Duck/Yu_Duck_formatted.csv"
 
 
-files <- list.files(file.path(species, "raw"), full.names = TRUE)
 
-if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
-  print("data already formatted")
-} else {
-    
+# Read in the data --------------------------------------------------------
+
+if(!file.exists(file.path(file.path("Yu_Duck"), "Formatted_raw_data.csv"))){
+
+  files <- list.files(file.path("Data/Yu_Duck/raw"), full.names = TRUE)
     
   # read them toggether 
   data <- lapply(files, function(x){
@@ -36,17 +36,11 @@ if (file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
   # split labelled and unlabelled
   data <- data %>% filter(!Activity == "")
   unlabelled <- data %>% filter(Activity == "") # there isn't really enough of this to qualify as much??? just ignore it
+ 
+
+} else {
+  print("data already created")
   
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
-  
-  
-  
-  fwrite(data, file.path(species, "Yu_Duck_formatted.csv"))
 }
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)

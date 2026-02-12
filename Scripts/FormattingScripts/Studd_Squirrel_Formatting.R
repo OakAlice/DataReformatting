@@ -1,15 +1,15 @@
-# Formatting the squirrel data --------------------------------------------
-# another nice and easy one
+#Studd_Squirrel --------------------------------------------
 
-# read in the data
+
+# Variables ---------------------------------------------------------------
 sample_rate <- 1
-species <- "Studd_Squirrel"
-output_path <- "Studd_Squirrel/Studd_Squirrel_formatted.csv"
+outputpath <- "Data/Studd_Squirrel/Studd_Squirrel_formatted.csv"
 
 
-if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
-    
-  data <- fread(file.path(species, "raw/Studd_2019.csv"))
+# Read in and rename the data ---------------------------------------------
+if(!file.exists(file.path(file.path("Studd_Squirrel"), "Formatted_raw_data.csv"))){
+  
+  data <- fread(file.path("Data/Studd_Squirrel/raw/Studd_2019.csv"))
   
   data <- data %>%
     select(TIME, BEHAV, X, Y, Z, LCOLOUR, RCOLOUR) %>%
@@ -17,17 +17,12 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
     rename(Time = TIME,
            Activity = BEHAV) %>%
     select(!c(LCOLOUR, RCOLOUR)) 
+
   
+} else {
+  print("data already created")
   
-  data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 2 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
-  
-  
-  fwrite(data, file.path(species, "Studd_Squirrel_formatted.csv"))
 }
+
+# Save the file -----------------------------------------------------------
+fwrite(data, outputpath)
