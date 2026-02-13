@@ -45,14 +45,7 @@ my_colours = c("coral", "aquamarine3", "orchid3", "slateblue2", "goldenrod2", "d
 # load in the data
 data <- fread(file.path(wd, "Data", species, paste0(species, "_formatted.csv")))
 
-data <- data %>%
-    group_by(ID) %>%
-    arrange(Time) %>%
-    mutate(time_diff = difftime(Time, data.table::shift(Time)), # had to define package or errored
-           break_point = ifelse(time_diff > 0.02 | time_diff < 0 , 1, 0),
-           break_point = replace_na(break_point, 0),
-           sequence = cumsum(break_point)) %>%
-    select(-break_point, -time_diff)
+data <- identify_sequence(data)
 
 
 ```

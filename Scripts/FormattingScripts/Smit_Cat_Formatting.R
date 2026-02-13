@@ -5,7 +5,6 @@
 # slightly changed to fit my file paths and use tidyverse notation
 # be mindful and careful of timezone changes
 
-
 # Load in the required packages -------------------------------------------
 pacman::p_load(readxl,
                reshape2,
@@ -16,9 +15,7 @@ pacman::p_load(readxl,
 sample_rate <- 50
 outputpath <-  "Data/Smit_Cat/Smit_Cat_formatted.csv"
 
-if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
-  
-  
+if(!file.exists(file.path(file.path("Data/Smit_Cat"), "Formatted_raw_data.csv"))){
 # Prepare the annotations -------------------------------------------------
 # read together the behaviour scoring data output for each cat - xlsx files
   if(!file.exists(file.path("Data", "Smit_Cat", "raw", "Annotations.csv"))){
@@ -70,8 +67,7 @@ if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
                     X = `Accelerometer X`,
                     Y = `Accelerometer Y`,
                     Z = `Accelerometer Z`)
-    
-    
+
     # ensure that the timezone for this data is set correctly
     # set the tz to UTC (DOUBLE CHECK THIS DOESNT CHANGE THE VALUE)
     dat[, Time := as.POSIXct(Time, format = "%d/%m/%Y %H:%M:%OS", tz = "UTC")]
@@ -90,6 +86,9 @@ if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
       print("something is wrong (annotations before accel)")
     }
     dat2 <- dat[Time > Strt$Time & Time < Ed$Time]
+    
+    setDT(dat2)
+    setDT(relevant_annotations)
     
     # annotations were made per second whereas data is in 30Hz so we need to do some steps
     # add second-level time keys to join them together
@@ -113,23 +112,6 @@ if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
     
   })
   data <- rbindlist(data)
-  # just the reformatted data
-  fwrite(data, file.path("Smit_Cat", paste0("Smit_Cat_rawcombined.csv")))
-  
-  # Adding the sequencing ---------------------------------------------------
-  data <- data %>%
-    arrange(ID, Time) %>%
-    mutate(
-      time_diff = as.numeric(difftime(Time, lag(Time), units = "secs")),
-      break_point = if_else(
-        is.na(time_diff), 
-        0L,
-        if_else(time_diff > 1 | time_diff < 0, 1L, 0L)
-      ),
-      sequence = cumsum(break_point)
-    ) %>%
-    ungroup() %>%
-    select(-break_point, -time_diff)
   
   # Recoding the behaviours -------------------------------------------------
   data <- data %>%
@@ -185,8 +167,6 @@ if(!file.exists(file.path(file.path("Smit_Cat"), "Formatted_raw_data.csv"))){
       
       TRUE ~ NA_character_
     ))
-  
-  
 
 } else {
   print("data already created")
