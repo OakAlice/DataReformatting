@@ -10,7 +10,9 @@ pacman::p_load(data.table,
                lubridate,
                tidyverse,
                stringr,
-               tsfeatures
+               tsibble,
+               theft, # for feature calculation
+               purrr
                )
 
 # list of all the species that could be chosen

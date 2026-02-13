@@ -9,3 +9,19 @@ identify_sequence <- function(data){
            sequence = cumsum(break_point)) %>%
     select(-break_point, -time_diff)
 }
+
+identify_events <- function(data){
+  
+  data <- data %>%
+    group_by(ID, sequence) %>%
+    arrange(Time, .by_group = TRUE) %>%
+    mutate(
+      change_point = if_else(lag(Activity) == Activity, 0L, 1L),
+      change_point = replace_na(change_point, 0L),
+      event = cumsum(change_point)
+    ) %>%
+    ungroup() %>%
+    select(-change_point)
+  
+  return(data)
+}
