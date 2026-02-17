@@ -4,6 +4,7 @@ Standardised workflow for formatting accelerometer datasets.
 My PhD is dependent on data generaously provided by the scientific community. Each of these datasets tends to be uploaded in different ways, but I need them in a standardised format. This git is a record of how the data has been reformatted.
 
 ## Repo Structure
+```
 DataReformatting
 ├── Dataset Folder/ *directory for each of the datasets*
 │ └── Dataset_Metadata.md *metadata for the dataset as well as instructions for download and formatting*
@@ -18,6 +19,7 @@ DataReformatting
 │ └── Generate_Dataset_Diagnostics.R *R script that calls the diagnostics markdown*
 ├── MetadataGuide.md *Guide for the metadata collected from each paper* 
 └── All_Metadata.csv *parent csv that contains releavant analysis metadata from all the datasets into single csv*
+```
 
 ## Data Format
 All datasets are reformatted to the following structure:
