@@ -28,8 +28,7 @@ All datasets are reformatted to the following structure:
     - ID: Identification to separate individual animals from each other, and to separate different trials of the same individual
     - Time: preferably as a POSIXct class, however, may require alternate numeric format - defined in metadata sheet
     - X, Y, Z: raw axes
-    - Activity: Behavioural label
-    - UpdatedActivity: Behavioural label, edited or grouped.
-    - Sequence: Unique numerical indicator grouping continuous periods of time sequences together.
-
+    - Activity: Behavioural label (original in the dataset)
+    - FuncActivity: Behavioural label, grouped to a more generalised category based on behavioural function
+    - BroadActivity: Behavioural label, grouped to a broad category (may or may not exist)
 
