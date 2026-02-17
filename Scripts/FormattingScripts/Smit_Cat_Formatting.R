@@ -10,14 +10,13 @@ pacman::p_load(readxl,
                reshape2,
                plyr)
 
-
 # Variables ---------------------------------------------------------------
 sample_rate <- 50
-outputpath <-  "Data/Smit_Cat/Smit_Cat_formatted.csv"
+output_path <-  "Data/Smit_Cat/Smit_Cat_formatted.csv"
 
-if(!file.exists(file.path(file.path("Data/Smit_Cat"), "Formatted_raw_data.csv"))){
-# Prepare the annotations -------------------------------------------------
-# read together the behaviour scoring data output for each cat - xlsx files
+if(!file.exists(output_path)){
+  # Prepare the annotations -------------------------------------------------
+  # read together the behaviour scoring data output for each cat - xlsx files
   if(!file.exists(file.path("Data", "Smit_Cat", "raw", "Annotations.csv"))){
     
     anno <- list.files(file.path("Data/Smit_Cat/raw/Labels_Data"),pattern="*.xlsx", full.names = TRUE)
@@ -115,18 +114,25 @@ if(!file.exists(file.path(file.path("Data/Smit_Cat"), "Formatted_raw_data.csv"))
   
   # Recoding the behaviours -------------------------------------------------
   data <- data %>%
-    mutate(GeneralisedActivity = case_when(
+    mutate(FuncActivity = case_when(
       
-      # Active
+      # General Active
       Activity %in% c(
         "Active_Climbing",
-        "Active_Jumping.Horizontal",
-        "Active_Jumping.Vertical",
         "Active_Playfight.Fighting",
-        "Active_Rubbing",
+        "Active_Rubbing"
+      ) ~ "Active",
+      
+      # Locomotion
+      Activity %in% c(
         "Active_Trotting",
         "Active_Walking"
-      ) ~ "Active",
+      ) ~ "Locomotion",
+      
+      Activity %in% c(
+        "Active_Jumping.Horizontal",
+        "Active_Jumping.Vertical"
+      ) ~ "Jumping",
       
       # Lying
       Activity %in% c(
@@ -165,12 +171,21 @@ if(!file.exists(file.path(file.path("Data/Smit_Cat"), "Formatted_raw_data.csv"))
       # Eating
       Activity == "Maintenance_Nutrition.Eating" ~ "Eating",
       
-      TRUE ~ NA_character_
-    ))
-
+      Activity == "Other_Social.Allogrooming" ~ "Social",
+      
+      # other / synchronisation stuff
+      Activity %in% c(
+        "Other_Start",
+        "Other_Outofsight",
+        "Other_Other"
+      ) ~ "Other"
+      
+    )) %>%
+    mutate(BroadActivity = str_split(Activity, "_", simplify = TRUE)[[1]])
+            
+  # Save the file -----------------------------------------------------------
+  fwrite(data, output_path)
+  
 } else {
   print("data already created")
 }
-
-# Save the file -----------------------------------------------------------
-fwrite(data, outputpath)

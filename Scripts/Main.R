@@ -7,6 +7,7 @@ wd <- setwd("E:/DataReformatting")
 
 # load in required package
 pacman::p_load(data.table,
+               dtw,
                lubridate,
                tidyverse,
                stringr,
@@ -29,12 +30,7 @@ source(file.path(wd, "Scripts/GeneralFunctions.R"))
 source(file.path(wd, "Scripts", "FormattingScripts", paste0(species, "_Formatting.R")))
 
 # score the dataset on complexity
-source(file.path(wd, "Scripts/Scoring/ComplexityScoring.R"))
+# source(file.path(wd, "Scripts/Scoring/ComplexityScoring.R"))
 
 # generate dataset characteristics and diagnostics report
 source(file.path(wd, "Scripts/Generate_Dataset_Diagnostics.R"))
-
-
-# TODO: 
-# set all dates to be generic 1970
-# store the sample rates in a more user friendly way

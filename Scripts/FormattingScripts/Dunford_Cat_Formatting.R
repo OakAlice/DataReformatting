@@ -4,12 +4,12 @@
 
 # Variables ---------------------------------------------------------------
 sample_rate <- 40
-outputpath <- "Data/Dunford_Cat/Dunford_Cat_formatted.csv"
+output_path <- "Data/Dunford_Cat/Dunford_Cat_formatted.csv"
 
 # Read in and rename the data ---------------------------------------------
-if(!file.exists(file.path(file.path("Dunford_Cat"), "Formatted_raw_data.csv"))){
+if(!file.exists(output_path)){
 
-   data <- fread("Data/Dunford_Cat/raw/Dunford_et_al._Cats_calibrated_data.csv")
+  data <- fread("Data/Dunford_Cat/raw/Dunford_et_al._Cats_calibrated_data.csv")
   
   data <- data %>%
     group_by(ID) %>%
@@ -31,13 +31,10 @@ if(!file.exists(file.path(file.path("Dunford_Cat"), "Formatted_raw_data.csv"))){
            Y = AccY,
            Z = AccZ,
            Activity = Behaviour)
+  
+  # Save File ---------------------------------------------------------------
+  fwrite(data, output_path)
+  
 } else {
   print("data already created")
-  
-
-  
 }
-
-# Save File ---------------------------------------------------------------
-fwrite(data, outputpath)
-

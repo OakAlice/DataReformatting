@@ -3,14 +3,12 @@
 
 # Variables ---------------------------------------------------------------
 sample_rate <- 50
-outputpath <- "Data/HarveyCarrol_Pangolin/HarveyCarrol_Pangolin_formatted.csv"
-
+output_path <- "Data/HarveyCarrol_Pangolin/HarveyCarrol_Pangolin_formatted.csv"
 
 # Read in and rename the data ---------------------------------------------
-if(!file.exists(file.path(file.path("HarveyCarrol_Pangolin"), "Formatted_raw_data.csv"))){
+if(!file.exists(output_path)){
   
-  
-   files <- list.files(
+  files <- list.files(
     path = "Data/HarveyCarrol_Pangolin/raw",
     recursive = TRUE,
     pattern = "\\.csv$",
@@ -28,17 +26,16 @@ if(!file.exists(file.path(file.path("HarveyCarrol_Pangolin"), "Formatted_raw_dat
            Activity = Behavior) %>%
     select(ID, Time, Activity, X, Y, Z)
  
-} else {
-print("data already formatted")
+  # Save the file -----------------------------------------------------------
+  fwrite(data, output_path)  
   
-
-
+} else {
+  print("data already formatted")
 } 
 
 
 
-# Save the file -----------------------------------------------------------
-fwrite(data, outputpath)  
+
 
 
 

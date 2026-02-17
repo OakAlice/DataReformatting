@@ -1,17 +1,15 @@
 # Mauny_Goat ------------------------------------------------
 # The Activity names had to be slightly changed
 
-# Variables ---------------------------------------------------------------
-sample_rate <- 5
-outputpath <- "Data/Mauny_Goat/Mauny_Goat_formatted.csv"
-
 # Required packages -------------------------------------------------------
 pacman::p_load(naniar)
 
-# Read in the acc data and labels -----------------------------------------
-if(!file.exists(file.path(file.path("Mauny_Goat"), "Formatted_raw_data.csv"))){
+# Variables ---------------------------------------------------------------
+sample_rate <- 5
+output_path <- "Data/Mauny_Goat/Mauny_Goat_formatted.csv"
 
-  
+if(!file.exists(output_path)){
+  # Read in the acc data and labels -----------------------------------------
   files <- list.files(file.path("Data/Mauny_Goat/raw"), full.names = TRUE)
   data <- lapply(files, function(x){
     df <- fread(x)
@@ -23,7 +21,7 @@ if(!file.exists(file.path(file.path("Mauny_Goat"), "Formatted_raw_data.csv"))){
                                      disturb_behav_data_goat = "no"
                                      ))
     
-# combine the behaviours --------------------------------------------------
+  # combine the behaviours --------------------------------------------------
     df <- df %>%
       mutate(
         Activity = case_when(
@@ -48,7 +46,7 @@ if(!file.exists(file.path(file.path("Mauny_Goat"), "Formatted_raw_data.csv"))){
     return(df)
  })
   
-# Rename the data ---------------------------------------------------------
+  # Rename the data ---------------------------------------------------------
   data <- bind_rows(data)
   data <- data %>%
     rename(Time = TIME,
@@ -61,13 +59,10 @@ if(!file.exists(file.path(file.path("Mauny_Goat"), "Formatted_raw_data.csv"))){
     arrange(Time) %>%
     ungroup() %>%
     arrange(ID, Time)
-
-  } else {
-  print("data already created")
-  }
-
-# Save the file -----------------------------------------------------------
-fwrite(data, outputpath)
-
-
   
+  # Save the file -----------------------------------------------------------
+  fwrite(data, output_path)
+  
+} else {
+  print("data already created")
+}

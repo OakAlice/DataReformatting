@@ -5,12 +5,11 @@
 
 # Variables ---------------------------------------------------------------
 sample_rate <- 50
-outputpath <-  "Data/Annett_Glider/Annett_Glider_formatted.csv"
+output_path <-  "Data/Annett_Glider/Annett_Glider_formatted.csv"
 
 # Reading in and relabeling data -----------------------------------------
-if(!file.exists(file.path(file.path("Annett_Glider"), "Formatted_raw_data.csv"))){
+if(!file.exists(output_path)){
 
-  
   raw_files <- list.files(
       path = "Data/Annett_Glider/raw",
     recursive = TRUE,
@@ -18,44 +17,30 @@ if(!file.exists(file.path(file.path("Annett_Glider"), "Formatted_raw_data.csv"))
     full.names = TRUE)
   
   alldata <- lapply(raw_files, function(x){
-  data <- fread(x)
-  ind <- ifelse(grepl("Flip", x), "Flip", "Gilberta") # Take ID names from files
-  data <- data %>% 
-   # Generating a generic time stamp for the start time
-     mutate(
-      time=as.POSIXct((V1 - 719529)*86400, origin = "1970-01-01", tz = "UTC"))
+    data <- fread(x)
+    ind <- ifelse(grepl("Flip", x), "Flip", "Gilberta") # Take ID names from files
+    data <- data %>% 
+     # Generating a generic time stamp for the start time
+       mutate(
+        time=as.POSIXct((V1 - 719529)*86400, origin = "1970-01-01", tz = "UTC"))
+    
+    data <- data %>% 
+      select(V2, V3, V4, V5, time) %>% 
+      rename(X = V2,
+             Y = V3,
+             Z = V4,
+             Activity = V5,
+             Time = time) %>%
+      mutate(ID = ind) 
+    
+    data <- filter(data, Activity != 0) 
+    data
+  })
+  data <- rbindlist(alldata)
   
-  data <- data %>% 
-    select(V2, V3, V4, V5, time) %>% 
-    rename(X = V2,
-           Y = V3,
-           Z = V4,
-           Activity = V5,
-           Time = time) %>%
-    mutate(ID = ind) 
+  # Save the file -----------------------------------------------------------
+  fwrite(data, output_path)
   
-  data <- filter(data, Activity != 0) 
-  data
-})
-data <- rbindlist(alldata)
-
 } else {
   print("data already created")
-  
 }
-
-
-# Save the file -----------------------------------------------------------
-fwrite(data, outputpath)
-  
-  
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
